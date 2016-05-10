@@ -16,6 +16,7 @@ from django.core.urlresolvers import reverse
 from django.db import connection, models, transaction
 from django.db.models import Case, IntegerField, Q, When
 from django.db.models.signals import post_delete, post_save, pre_delete
+from django.db.utils import OperationalError
 from django.dispatch.dispatcher import receiver
 from django.http import Http404
 from django.template.response import TemplateResponse
@@ -1810,7 +1811,12 @@ class Collection(MP_Node):
 
 
 def get_root_collection_id():
-    return Collection.get_first_root_node().id
+    try:
+        return Collection.get_first_root_node().id
+    except OperationalError:
+        # migration not yet applied
+        # django.db.utils.OperationalError: no such table: wagtailcore_collection
+        return None
 
 
 class CollectionMember(models.Model):
